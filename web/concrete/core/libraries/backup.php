@@ -55,7 +55,7 @@ class Concrete5_Library_Backup_BackupTable {
 	**/
 	public function __construct($table)	{
 		$this->db = Loader::db();
-		$this->db->setFetchMode(ADODB_ASSOC_BOTH);
+		$this->db->setFetchMode(ADODB_FETCH_BOTH);
 		if (trim($table) == "") {
 			return false;
 		}
@@ -65,13 +65,6 @@ class Concrete5_Library_Backup_BackupTable {
 			print "Error while retrieving data from". $this->str_tablename;
 		}
 		else {
-			$this->rs_table->MoveFirst();
-			//			while (!$rs_table->EOF){
-				 for ($f_it=0; $f_it<$this->rs_table->FieldCount();$f_it++) {
-				  $obj_fld = $this->rs_table->FetchField($f_it);
-				  $str_fieldtype = $this->rs_table->MetaType($obj_fld->type);
-//				 }	
-			}
 			$this->generateCreateTableSql();
 			$this->generateDataInsertionSql();
 			$this->rs_table->Close();
@@ -108,19 +101,28 @@ class Concrete5_Library_Backup_BackupTable {
 			print "Error while retrieving table creation SQL";
 		}
 		else {
-			$this->str_createTableSql = preg_replace('/CREATE TABLE/','CREATE TABLE IF NOT EXISTS',$rs_createsql->fields['Create Table']). ";";x;
+			$this->str_createTableSql = preg_replace('/CREATE TABLE/','CREATE TABLE IF NOT EXISTS',$rs_createsql->fields['Create Table']). ";";
 			$rs_createsql->close();
 		}
 	}
 	
 	public function generateDataInsertionSql() {
 		$this->rs_table->MoveFirst(); // Just in case 
+		
+		if (!$this->rs_table->EOF) {
+			// figure out field types once
+			$arr_fieldtype_quoted = Array();
+			for ($int_cflds = 0; $int_cflds < $this->rs_table->FieldCount(); $int_cflds++) {
+				$obj_fld = $this->rs_table->FetchField($int_cflds);
+				$arr_fieldtype_quoted[$int_cflds] = $this->isQuotedType($this->rs_table->MetaType($obj_fld->type));
+			}
+		}
+		
 		while (!$this->rs_table->EOF) {
 			$arr_rowData = Array();
 			for($int_cflds = 0;$int_cflds < $this->rs_table->FieldCount();$int_cflds++) {
 				$obj_fld = $this->rs_table->FetchField($int_cflds);
-				$str_fieldtype = $this->rs_table->MetaType($obj_fld->type);
-				if ($this->isQuotedType($str_fieldtype)) {
+				if ($arr_fieldtype_quoted[$int_cflds]) {
 					$str_fieldData = $this->db->qstr($this->rs_table->fields[$obj_fld->name]);
 					if ($str_fieldData == "") {
 					   $str_fieldData = "''";

@@ -28,19 +28,34 @@ $listHTML = $sh->outputRequestHTML($instanceID, 'full', false, $nodes);
 <div class="ccm-pane-options">
 	<a href="javascript:void(0)" onclick="ccm_paneToggleOptions(this)" class="ccm-icon-option-<? if ($_SESSION['dsbSitemapShowSystem'] == 1) { ?>open<? } else { ?>closed<? } ?>"><?=t('Options')?></a>
 	<div class="ccm-pane-options-content" <? if ($_SESSION['dsbSitemapShowSystem'] == 1) { ?> style="display: block" <? } ?>>
-		<form>
-		<div id="ccm-show-all-pages" class="clearfix">
-			<label for="ccm-show-all-pages-cb"><?=t('Show System Pages')?></label>
-			<div class="input">
-			<ul class="inputs-list">
-				<li><input type="checkbox" id="ccm-show-all-pages-cb" <? if ($_SESSION['dsbSitemapShowSystem'] == 1) { ?> checked <? } ?> /></li>
-			</ul>		
-			</div>
+		<div class="clearfix">
+			<form>
+				<label class="checkbox">
+					<input type="checkbox" id="ccm-show-all-pages-cb" <? if ($_SESSION['dsbSitemapShowSystem'] == 1) { ?> checked <? } ?> />
+					<?=t('Show System Pages')?>
+				</label>
+			</form>
 		</div>
-		</form>
 	</div>
 </div>
 <div class="ccm-pane-body ccm-pane-body-footer">
+
+	<? $u = new User();
+	if ($u->isSuperUser()) {
+		if (Queue::exists('copy_page')) {
+		$q = Queue::get('copy_page');
+		if ($q->count() > 0) { ?>
+
+			<div style="position: relative" class="alert alert-warning">
+				<div style="position: absolute; top: 5px; right: 5px"><button class="btn btn-small" onclick="ccm_refreshCopyOperations()"><?=t('Resume Copy')?></button></div>
+				<?=t('Page copy operations pending.')?>
+			</div>
+
+		<? }
+	}
+
+	} ?>
+
 	<? if ($sh->canRead()) { ?>
 	
 		<div id="ccm-sitemap-message"></div>

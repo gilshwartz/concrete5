@@ -19,11 +19,12 @@ if ($_REQUEST['fExtension'] != false) {
 }
 
 $html = Loader::helper('html');
+$text = Loader::helper('text');
 
 Loader::model('file_attributes');
 $searchFieldAttributes = FileAttributeKey::getSearchableList();
 foreach($searchFieldAttributes as $ak) {
-	$searchFields[$ak->getAttributeKeyID()] = $ak->getAttributeKeyDisplayHandle();
+	$searchFields[$ak->getAttributeKeyID()] = $ak->getAttributeKeyDisplayName();
 }
 
 $ext1 = FileList::getExtensionList();
@@ -80,22 +81,49 @@ foreach($t1 as $value) {
 	</div>
 
 	<form method="get" class="form-horizontal" id="ccm-<?=$searchInstance?>-advanced-search" action="<?=REL_DIR_FILES_TOOLS_REQUIRED?>/files/search_results">
-	<? if ($_REQUEST['fType'] != false) { ?>
-		<div class="ccm-file-manager-pre-filter"><?=t('Only displaying %s files.', FileType::getGenericTypeText($_REQUEST['fType']))?></div>
-	<? } else if ($_REQUEST['fExtension'] != false) { ?>
-		<div class="ccm-file-manager-pre-filter"><?=t('Only displaying files with extension .%s.', $_REQUEST['fExtension'])?></div>
+	<? if ($_REQUEST['fType'] != false) {
+		$showTypes = array();
+		if(is_array($_REQUEST['fType'])) {
+			foreach($_REQUEST['fType'] as $showTypeId) {
+				$showTypes[] = FileType::getGenericTypeText($showTypeId);
+			}
+		}
+		else {
+			$showTypes[] = FileType::getGenericTypeText($_REQUEST['fType']);
+		}
+		?>
+		<div class="ccm-file-manager-pre-filter"><?=t('Only displaying %s files.', implode(', ', $showTypes))?></div>
+	<? } else if ($_REQUEST['fExtension'] != false) {
+		if(is_array($_REQUEST['fExtension'])) {
+			$showExtensions = $_REQUEST['fExtension'];
+		}
+		else {
+			$showExtensions = array($_REQUEST['fExtension']);
+		}
+		?>
+		<div class="ccm-file-manager-pre-filter"><?=t('Only displaying files with extension .%s.', implode(', ', $showExtensions))?></div>
 	<? } ?>
 
 	<input type="hidden" name="submit_search" value="1" />
 	<?
-		print $form->hidden('fType'); 
-		print $form->hidden('fExtension'); 
+		foreach(array('fType', 'fExtension') as $filterName) {
+			$filterValues = '';
+			if(is_array($_REQUEST[$filterName])) {
+				foreach($_REQUEST[$filterName] as $filterValue) {
+					print '<input type="hidden" name="' . $filterName . '[]" value="' . $text->entities($filterValue) . '" />';
+				}
+			}
+			else {
+				print $form->hidden($filterName);
+			}
+		}
 		print $form->hidden('searchType', $searchType); 
 		print $form->hidden('ccm_order_dir', $searchRequest['ccm_order_dir']); 
 		print $form->hidden('ccm_order_by', $searchRequest['ccm_order_by']); 
 		print $form->hidden('fileSelector', $fileSelector); 
 	?>	
 	<input type="hidden" name="searchInstance" value="<?=$searchInstance?>" />
+	<br/>
 	<div class="ccm-pane-options-permanent-search">
 
 	<?
@@ -116,14 +144,14 @@ foreach($t1 as $value) {
 			<div class="controls">
 				<?=$form->select('fssID', $savedSearches, $fssID, array('class' => 'span3', 'style' => 'vertical-align: middle'))?>
 				<? if ($_REQUEST['fssID'] > 0) { ?>
-					<a href="<?=REL_DIR_FILES_TOOLS_REQUIRED?>/files/delete_set?fsID=<?=$_REQUEST['fssID']?>&searchInstance=<?=$searchInstance?>" class="ccm-file-set-delete-saved-search" dialog-append-buttons="true" dialog-title="<?=t('Delete File Set')?>" dialog-width="320" dialog-height="110" dialog-modal="false" style="vertical-align: middle"><img src="<?=ASSETS_URL_IMAGES?>/icons/delete_small.png" style="vertical-align: middle" width="16" height="16" border="0" /></a>
+					<a href="<?=REL_DIR_FILES_TOOLS_REQUIRED?>/files/delete_set?fsID=<?=h($_REQUEST['fssID'])?>&searchInstance=<?=$searchInstance?>" class="ccm-file-set-delete-saved-search" dialog-append-buttons="true" dialog-title="<?=t('Delete File Set')?>" dialog-width="320" dialog-height="110" dialog-modal="false" style="vertical-align: middle"><img src="<?=ASSETS_URL_IMAGES?>/icons/delete_small.png" style="vertical-align: middle" width="16" height="16" border="0" /></a>
 				<? } ?>
 			</div>
 			</div>
 			
 		<? } ?>
 
-		<div class="span3">
+		<div class="span4">
 		<?=$form->label('fvKeywords', t('Keywords'))?>
 		<div class="controls">
 			<?=$form->text('fKeywords', $searchRequest['fKeywords'], array('style'=> 'width: 130px')); ?>
@@ -301,6 +329,6 @@ foreach($t1 as $value) {
 	$('#ccm-<?=$searchInstance?>-advanced-search select[name=fssID]').attr('disabled', false);
 	<? } ?>
 	
-	$(".chosen-select").chosen();	
+	$(".chosen-select").chosen(ccmi18n_chosen);	
 
 });</script>

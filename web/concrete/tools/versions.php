@@ -31,6 +31,7 @@
 		if (count($_REQUEST['cvID']) > 0) {
 			$tabs = array();
 			foreach($_REQUEST['cvID'] as $cvID) {
+				$cvID=Loader::helper('security')->sanitizeInt($cvID);
 				$tabs[] = array('view-version-' . $cvID, t('Version %s', $cvID), ($i == 0));
 				$i++;
 			}
@@ -38,7 +39,10 @@
 		}
 
 
-		foreach($_REQUEST['cvID'] as $cvID) { ?>
+		foreach($_REQUEST['cvID'] as $cvID) { 
+			$cvID = Loader::helper('security')->sanitizeInt($cvID);
+?>
+			
 		
 		<div id="ccm-tab-content-view-version-<?=$cvID?>" style="display: <?=$display?>; height: 100%">
 		<iframe border="0" id="v<?=time()?>" frameborder="0" height="100%" width="100%" src="<?=BASE_URL . DIR_REL?>/<?=DISPATCHER_FILENAME?>?cvID=<?=$cvID?>&cID=<?=$_REQUEST['cID']?>&vtask=view_versions" />
@@ -95,12 +99,13 @@
 						$pkr->setRequesterUserID($u->getUserID());
 						$u->unloadCollectionEdit($c);
 						$response = $pkr->trigger();
+						$cvID = Loader::helper('security')->sanitizeInt($_GET['cvID']);
 						if (!($response instanceof WorkflowProgressResponse)) {
-							header("Location: " . REL_DIR_FILES_TOOLS_REQUIRED . "/versions.php?forcereload=1&deferred=true&cID=" . $cID . "&cvID=" . $_GET['cvID']);
+							header("Location: " . REL_DIR_FILES_TOOLS_REQUIRED . "/versions.php?forcereload=1&deferred=true&cID=" . $cID . "&cvID=" . $cvID);
 							exit;
 						} else {
 							// we only get this response if we have skipped workflows and jumped straight in to an approve() step.
-							header("Location: " . REL_DIR_FILES_TOOLS_REQUIRED . "/versions.php?forcereload=1&cID=" . $cID . "&cvID=" . $_GET['cvID']);
+							header("Location: " . REL_DIR_FILES_TOOLS_REQUIRED . "/versions.php?forcereload=1&cID=" . $cID . "&cvID=" . $cvID);
 							exit;
 						}
 					}
@@ -363,6 +368,8 @@ $("button[name=vRemove]").click(function() {
 		</th>
 	</tr>
 	<? 
+	$dh = Loader::helper('date');
+	/* @var $dh DateHelper */
 	$vIsPending = true;
 	foreach ($vArray as $v) { 
 		if ($v->isApproved()) {
@@ -396,7 +403,7 @@ $("button[name=vRemove]").click(function() {
 			print $v->getVersionApproverUserName();
 			
 			?></td>
-		<td colspan="2"><?=date(DATE_APP_PAGE_VERSIONS, strtotime($v->getVersionDateCreated('user')))?></td>
+		<td colspan="2"><?=$dh->formatSpecial('PAGE_VERSIONS', $v->getVersionDateCreated())?></td>
 	</tr>	
 	<? } ?>
 	</table>

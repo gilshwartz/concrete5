@@ -16,12 +16,15 @@ $th = Loader::helper('text');
 		$target = ($page->getCollectionPointerExternalLink() != '' && $page->openCollectionPointerExternalLinkInNewWindow()) ? '_blank' : $page->getAttribute('nav_target');
 		$target = empty($target) ? '_self' : $target;
 		$description = $page->getCollectionDescription();
-		$description = $controller->truncateSummaries ? $th->shorten($description, $controller->truncateChars) : $description;
+		$description = $controller->truncateSummaries ? $th->wordSafeShortText($description, $controller->truncateChars) : $description;
 		$description = $th->entities($description);	
 		
 		//Other useful page data...
-		//$date = date('F j, Y', strtotime($page->getCollectionDatePublic()));
+		
+		//$date = Loader::helper('date')->formatDate($page->getCollectionDatePublic(), true);
+		
 		//$last_edited_by = $page->getVersionObject()->getVersionAuthorUserName();
+		
 		//$original_author = Page::getByID($page->getCollectionID(), 1)->getVersionObject()->getVersionAuthorUserName();
 		
 		/* CUSTOM ATTRIBUTE EXAMPLES:

@@ -26,7 +26,7 @@ function printAttributeRow($ak, $uo, $assignment) {
 		$value = $vo->getValue('displaySanitized', 'display');
 	}
 	
-	if ($value == '') {
+	if (($value === '') || is_null($value)) {
 		$text = '<div class="ccm-attribute-field-none">' . t('None') . '</div>';
 	} else {
 		$text = $value;
@@ -36,7 +36,7 @@ function printAttributeRow($ak, $uo, $assignment) {
 	
 	$html = '
 	<tr class="ccm-attribute-editable-field">
-		<td width="250" style="vertical-align:middle;"><a style="font-weight:bold; line-height:18px;" href="javascript:void(0)">' . $ak->getAttributeKeyDisplayHandle() . '</a></td>
+		<td width="250" style="vertical-align:middle;"><a style="font-weight:bold; line-height:18px;" href="javascript:void(0)">' . $ak->getAttributeKeyDisplayName() . '</a></td>
 		<td class="ccm-attribute-editable-field-central" style="vertical-align:middle;"><div class="ccm-attribute-editable-field-text">' . $text . '</div>
 		<form method="post" style="margin-bottom:0;" action="' . View::url('/dashboard/users/search', 'edit_attribute') . '">
 		<input type="hidden" name="uakID" value="' . $ak->getAttributeKeyID() . '" />
@@ -57,7 +57,7 @@ function printAttributeRow($ak, $uo, $assignment) {
 
 	$html = '
 	<tr>
-		<td width="250">' . $ak->getAttributeKeyDisplayHandle() . '</th>
+		<th width="250">' . $ak->getAttributeKeyDisplayName() . '</th>
 		<td class="ccm-attribute-editable-field-central" colspan="2">' . $text . '</td>
 	</tr>';	
 	}
@@ -207,6 +207,7 @@ if (is_object($uo)) {
         
         
 		<table class="table" border="0" cellspacing="0" cellpadding="0" width="100%">
+			<tbody>
 	        <? if ($assignment->allowEditPassword()) { ?>
 
             	<tr>
@@ -228,8 +229,8 @@ if (is_object($uo)) {
             <? } ?>
             
             <?
-                $languages = Localization::getAvailableInterfaceLanguages();
-                if (count($languages) > 0) { ?>
+                $locales = Localization::getAvailableInterfaceLanguageDescriptions(ACTIVE_LOCALE);
+                if (count($locales) > 1) { // "> 1" because en_US is always available ?>
                 <tr>
                     <td colspan="2"><strong><?=t('Default Language')?></strong></td>
                 </tr>	
@@ -238,16 +239,7 @@ if (is_object($uo)) {
                     <?
 						$ux = $uo->getUserObject();
                     	if ($assignment->allowEditDefaultLanguage()) { 
-							array_unshift($languages, 'en_US');
-							$locales = array();
-							Loader::library('3rdparty/Zend/Locale');
-							Loader::library('3rdparty/Zend/Locale/Data');
-							$locales[''] = t('** Default');
-							Zend_Locale_Data::setCache(Cache::getLibrary());
-							foreach($languages as $lang) {
-								$loc = new Zend_Locale($lang);
-								$locales[$lang] = Zend_Locale::getTranslation($loc->getLanguage(), 'language', $lang);
-							}
+							$locales = array_merge(array('' => t('** Default')), $locales);
 							print $form->select('uDefaultLanguage', $locales, $ux->getUserDefaultLanguage());
 						} else {
 							print $ux->getUserDefaultLanguage();
@@ -307,7 +299,7 @@ if (is_object($uo)) {
                                         }
                                     }
                                 ?> />
-                                <span><?=$g->getGroupName()?></span>
+                                <span><?=$g->getGroupDisplayName()?></span>
                             </label>
                         
                     <? } ?> 
@@ -439,7 +431,7 @@ if (is_object($uo)) {
 		<h3><?=t('Basic Details')?></h3><br/>
 		<p><strong><?=$uo->getUserName()?></strong></p>
 		<p><a href="mailto:<?=$uo->getUserEmail()?>"><?=$uo->getUserEmail()?></a></p>
-		<p><?=t('Account created on %s. Last logged in from IP: %s.', date(DATE_APP_GENERIC_MDYT, strtotime($uo->getUserDateAdded('user'))), $uo->getLastIPAddress())?></p>
+		<p><?=t('Account created on %s. Last logged in from IP: %s.', $dh->formatDateTime($uo->getUserDateAdded(), false, false), $uo->getLastIPAddress())?></p>
 		<?=(ENABLE_USER_TIMEZONES && strlen($uo->getUserTimezone())?"<p>".t('Timezone').": ".$uo->getUserTimezone() . '</p>':"")?>
 		<? if (USER_VALIDATE_EMAIL) { ?>
 			<p>
@@ -475,7 +467,7 @@ if (is_object($uo)) {
 			?>
 			
 		<div class="row">
-		<div class="span5" style=""><p><strong><?=$uk->getAttributeKeyDisplayHandle()?></strong></p></div>
+		<div class="span5" style=""><p><strong><?=$uk->getAttributeKeyDisplayName()?></strong></p></div>
 		<div class="span5"><p>
 			<?=$uo->getAttribute($uk->getAttributeKeyHandle(), 'displaySanitized', 'display')?>
 		</p></div>
@@ -500,15 +492,13 @@ if (is_object($uo)) {
 				$groups++; ?>
 
 				<div class="row">
-				<div class="span5" style=""><p><strong><?=$g->getGroupName()?></strong></p></div>
+				<div class="span5" style=""><p><strong><?=$g->getGroupDisplayName()?></strong></p></div>
 				<div class="span5"><p>
 					<?
 					$dateTime = $g->getGroupDateTimeEntered();
 					if ($dateTime != '0000-00-00 00:00:00') {
-						echo($dateTime . '<br>');
-					} else {
-						echo('<br>');
-					}?>
+						echo $dh->formatDateTime($dateTime, false, true);
+					}?><br />
 					</p></div>
 				</div>
 			<? } ?>

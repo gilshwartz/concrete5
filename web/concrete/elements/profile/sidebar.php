@@ -5,7 +5,7 @@
 		<a href="<?=View::url('/profile',$profile->getUserID())?>"><?= $profile->getUsername()?></a>
 	</div>
 	<div style="margin-top:16px; padding-bottom:4px; margin-bottom:0px; font-weight:bold"><?=t('Member Since')?></div>
-	<?=date(DATE_APP_GENERIC_MDY_FULL, strtotime($profile->getUserDateAdded('user')))?>
+	<?=Loader::helper('date')->formatDate($profile->getUserDateAdded(), true)?>
 	
 	<? 
 	$u = new User();
@@ -35,14 +35,19 @@
 	<? 
 	if($u->getUserID() == $profile->getUserID()) {
 		$nc = Page::getByPath('/profile');
-		$bt = BlockType::getByHandle('autonav');
-		$bt->controller->displayPages = 'custom';
-		$bt->controller->displayPagesCID = $nc->getCollectionID();
-		$bt->controller->orderBy = 'display_asc';
-		$bt->controller->displaySubPages = 'all';
-		$bt->controller->displaySubPageLevels = '1';
-		$bt->controller->displaySystemPages = true;
-		$bt->render('view');
+		$pl = new PageList();
+		$pl->filterByParentID($nc->getCollectionID());
+		$pages = $pl->get(0);
+		if (is_array($pages) && !empty($pages)) {
+			$nh = Loader::helper('navigation');
+			?>
+			<ul class="nav">
+			<?php foreach ($pages as $page) { ?>
+				<li><a href="<?php echo $nh->getLinkToCollection($page) ?>"><?php echo t($page->getCollectionName())?></a></li>
+			<?php } ?>
+			</ul>
+		<?php
+		}
 	}
 	?>
 	</div>

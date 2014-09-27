@@ -30,6 +30,7 @@ var ccmi18n = {
 	copyBlockToScrapbookMsg: "<?=t('The block has been added to your clipboard.')?>",
 	closeWindow: "<?=t('Close')?>",
 	editBlock: "<?=t('Edit')?>",
+	editBlockWithName: "<?=tc('%s is a block type name', 'Edit %s')?>",
 	setPermissionsDeferredMsg: "<?=t('Permission setting saved. You must complete the workflow before this change is active.')?>",
 	editStackContents: "<?=t('Manage Stack Contents')?>",
 	compareVersions: "<?=t('Compare Versions')?>",
@@ -50,6 +51,8 @@ var ccmi18n = {
 	themeBrowserLoading: "<?=t('Retrieving theme data from concrete5.org marketplace.')?>",
 	addonBrowserLoading: "<?=t('Retrieving add-on data from concrete5.org marketplace.')?>",
 	clear: "<?=t('Clear')?>",
+	requestTimeout: "<?=t('This request took too long.')?>",
+	generalRequestError: "<?=t('An unexpected error occurred.')?>",
 	helpPopup: "<?=t('Help')?>",
 	community: "<?=t('concrete5 Community')?>",
 	communityCheckout: "<?=t('concrete5 Community - Purchase &amp; Checkout')?>",
@@ -85,6 +88,7 @@ var ccmi18n_sitemap = {
 	visitExternalLink: "<?=t('Visit')?>",
 	editExternalLink: "<?=t('Edit External Link')?>",
 	deleteExternalLink: "<?=t('Delete')?>",
+	copyProgressTitle: "<?=t('Copy Progress')?>",
 	addExternalLink: "<?=t('Add External Link')?>",
 	sendToTop: "<?=t('Send To Top')?>",
 	sendToBottom: "<?=t('Send To Bottom')?>",
@@ -171,3 +175,11 @@ var ccmi18n_filemanager = {
 	FTYPE_APPLICATION: "<?=FileType::T_APPLICATION?>"
 	
 }
+
+var ccmi18n_chosen = {
+
+	placeholder_text_multiple: "<?=t('Select Some Options')?>",
+	placeholder_text_single: "<?=t('Select an Option')?>",
+	no_results_text: "<?=t(/*i18n After this text we have a search criteria: for instance 'No results match "Criteria"'*/'No results match')?>"
+
+};

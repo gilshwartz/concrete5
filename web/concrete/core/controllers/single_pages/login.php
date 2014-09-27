@@ -7,7 +7,7 @@ class Concrete5_Controller_Login extends Controller {
 	private $openIDReturnTo;
 	protected $locales = array();
 	protected $supportsPageCache = true;
-	
+
 	public function on_start() {
 		$this->error = Loader::helper('validation/error');
 		if (USER_REGISTRATION_WITH_EMAIL_ADDRESS) {
@@ -17,25 +17,15 @@ class Concrete5_Controller_Login extends Controller {
 		}
 
 		$txt = Loader::helper('text');
-		if (strlen($_GET['uName'])) { // pre-populate the username if supplied, if its an email address with special characters the email needs to be urlencoded first,
+		if (isset($_GET['uName']) && strlen($_GET['uName'])) { // pre-populate the username if supplied, if its an email address with special characters the email needs to be urlencoded first,
 			$this->set("uName",trim($txt->email($_GET['uName'])));
 		}
 
 		$languages = array();
 		$locales = array();
 		if (Config::get('LANGUAGE_CHOOSE_ON_LOGIN')) {
-			Loader::library('3rdparty/Zend/Locale');
-			Loader::library('3rdparty/Zend/Locale/Data');
-			$languages = Localization::getAvailableInterfaceLanguages();
-			if (count($languages) > 0) {
-				array_unshift($languages, 'en_US');
-			}
-			$locales = array('' => t('** Default'));
-			Zend_Locale_Data::setCache(Cache::getLibrary());
-			foreach($languages as $lang) {
-				$loc = new Zend_Locale($lang);
-				$locales[$lang] = Zend_Locale::getTranslation($loc->getLanguage(), 'language', ACTIVE_LOCALE);
-			}
+			$locales = Localization::getAvailableInterfaceLanguageDescriptions();
+			$locales = array_merge(array('' => t('** Default')), $locales);
 		}
 		$this->locales = $locales;
 		$this->set('locales', $locales);
@@ -138,7 +128,7 @@ class Concrete5_Controller_Login extends Controller {
 			if(!$_COOKIE[SESSION]) {
 				throw new Exception(t('Your browser\'s cookie functionality is turned off. Please turn it on.'));
 			}
-		
+
 			if (!$ip->check()) {
 				throw new Exception($ip->getErrorMessage());
 			}
@@ -253,7 +243,7 @@ class Concrete5_Controller_Login extends Controller {
 			foreach($unfilledAttributes as $uak) {
 				$e1 = $uak->validateAttributeForm();
 				if ($e1 == false) {
-					$this->error->add(t('The field "%s" is required', $uak->getAttributeKeyName()));
+					$this->error->add(t('The field "%s" is required', $uak->getAttributeKeyDisplayName()));
 				} elseif ($e1 instanceof ValidationErrorHelper) {
 					$this->error->add($e1);
 				}
@@ -365,8 +355,8 @@ class Concrete5_Controller_Login extends Controller {
 
 	public function forward($cID = 0) {
 		$nh = Loader::helper('validation/numbers');
-		if ($nh->integer($cID)) {
-			$this->set('rcID', $cID);
+		if ($nh->integer($cID) && intval($cID) > 0) {
+			$this->set('rcID', intval($cID));
 		}
 	}
 
@@ -455,11 +445,8 @@ class Concrete5_Controller_Login extends Controller {
 			$mh->to($oUser->getUserEmail());
 
 			//generate hash that'll be used to authenticate user, allowing them to change their password
-			$h = Loader::helper('validation/identifier');
-			$uHash = $h->generate('UserValidationHashes', 'uHash');
-			$db = Loader::db();
-			$db->Execute("DELETE FROM UserValidationHashes WHERE uID=?", array( $oUser->uID ) );
-			$db->Execute("insert into UserValidationHashes (uID, uHash, uDateGenerated, type) values (?, ?, ?, ?)", array($oUser->uID, $uHash, time(),intval(UVTYPE_CHANGE_PASSWORD)));
+			$uHash = UserValidationHash::add($oUser->getUserID(), UVTYPE_CHANGE_PASSWORD, true);
+
 			$changePassURL=BASE_URL . View::url('/login', 'change_password', $uHash);
 			$mh->addParameter('changePassURL', $changePassURL);
 

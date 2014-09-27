@@ -12,13 +12,29 @@ echo Loader::helper('concrete/dashboard')->getDashboardPaneHeaderWrapper(t('Attr
 		<tr>
 			<th><?=t('Name')?></th>
 			<? foreach($categories as $cat) { ?>
-				<th><?=$txt->unhandle($cat->getAttributeKeyCategoryHandle())?></th>
+				<th><?
+					$akcHandle = $cat->getAttributeKeyCategoryHandle();
+					switch($akcHandle) {
+						case 'collection':
+							echo t('Page');
+							break;
+						case 'user':
+							echo t('User');
+							break;
+						case 'file':
+							echo t('File');
+							break;
+						default:
+							echo t($txt->unhandle($akcHandle));
+							break;
+					}
+				?></th>
 			<? } ?>
 		</tr>
 		<?php foreach($types as $at) { ?>
 
 			<tr>
-				<td><?=$at->getAttributeTypeName()?></td>
+				<td><?=$at->getAttributeTypeDisplayName()?></td>
 				<? foreach($categories as $cat) { ?>
 					<td style="width: 1px; text-align: center"><?=$form->checkbox($cat->getAttributeKeyCategoryHandle() . '[]', $at->getAttributeTypeID(), $at->isAssociatedWithCategory($cat))?></td>
 				<? } ?>
@@ -49,7 +65,7 @@ $types = PendingAttributeType::getList(); ?>
 					<?
 					print $form->hidden("atHandle", $at->getAttributeTypeHandle());
 					?>
-					<p style="background-image: url(<?=$at->getAttributeTypeIconSRC()?>)" class="ccm-block-type-inner"><?=$ch->submit(t("Install"), 'submit', 'right', 'small')?><?=$at->getAttributeTypeName()?></p>
+					<p style="background-image: url(<?=$at->getAttributeTypeIconSRC()?>)" class="ccm-block-type-inner"><?=$ch->submit(t("Install"), 'submit', 'right', 'small')?><?=$at->getAttributeTypeDisplayName()?></p>
 				</form>
 			</li>
 		<? } ?>

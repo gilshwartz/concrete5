@@ -47,8 +47,12 @@ defined('C5_EXECUTE') or die("Access Denied.");
 			if (is_object($val)) {
 				$val = (string) $val;
 			}
-			$av = $akv->addChild('value', '<![CDATA[' . $val . ']]>');
-	 		return $av;
+
+			$cnode = $akv->addChild('value');
+			$node = dom_import_simplexml($cnode);
+			$no = $node->ownerDocument;
+			$node->appendChild($no->createCDataSection($val));
+	 		return $cnode;
 	 	}
 	 	
 	 	public function importKey($akn) {
@@ -68,7 +72,7 @@ defined('C5_EXECUTE') or die("Access Denied.");
 
 		public function label($customText = false) {
 			if ($customText == false) {
-				$text = t($this->attributeKey->getAttributeKeyName());
+				$text = $this->attributeKey->getAttributeKeyDisplayName();
 			} else {
 				$text = $customText;
 			}
@@ -185,10 +189,10 @@ defined('C5_EXECUTE') or die("Access Denied.");
 					if (is_object($this->attributeKey)) {
 						$ak2 = $akc->getAttributeKeyByHandle($args['akHandle']);
 						if ($ak2->getAttributeKeyID() != $this->attributeKey->getAttributeKeyID()) {
-							$error->add(t("An attribute with the handle %s already exists.", $akHandle));
+							$error->add(t("An attribute with the handle %s already exists.", $args['akHandle']));
 						}
 					} else {
-						$error->add(t("An attribute with the handle %s already exists.", $akHandle));
+						$error->add(t("An attribute with the handle %s already exists.", $args['akHandle']));
 					}
 				}
 			} else {

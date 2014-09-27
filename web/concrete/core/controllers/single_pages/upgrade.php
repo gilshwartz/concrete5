@@ -53,7 +53,12 @@ class Concrete5_Controller_Upgrade extends Controller {
 				$message .= t('Your current website uses a version of concrete5 greater than this one. You cannot upgrade.');
 				$this->set('message', $message);
 			} else if (version_compare($sav, APP_VERSION, '=')) {
-				$this->set('message', t('Your site is already up to date! The current version of concrete5 is <b>%s</b>. You should remove this file for security.', APP_VERSION));
+				$message = t('Your site is already up to date!');
+				if(defined('APP_VERSION_DISPLAY_IN_HEADER') && APP_VERSION_DISPLAY_IN_HEADER) {
+					$message .= ' ' . t('The current version of concrete5 is %s.', sprintf('<b>%s</b>', APP_VERSION));
+				}
+				$message .= ' ' . t('You should remove this file for security.');
+				$this->set('message', $message);
 			} else {
 				if ($this->post('do_upgrade')) {
 					$this->do_upgrade();
@@ -173,6 +178,21 @@ class Concrete5_Controller_Upgrade extends Controller {
 			$ugvs[] = "version_561";
 		}
 
+		if (version_compare($sav, '5.6.2', '<')) { 
+			$ugvs[] = "version_562";
+		}
+		
+		if (version_compare($sav, '5.6.3', '<')) { 
+			$ugvs[] = "version_563";
+		}
+
+		if (version_compare($sav, '5.6.3.1', '<')) {
+			$ugvs[] = "version_5631";
+		}
+
+		if (version_compare($sav, '5.6.3.2', '<')) {
+			$ugvs[] = "version_5632";
+		}
 
 		foreach($ugvs as $ugh) {
 			$this->upgrades[] = Loader::helper('concrete/upgrade/' . $ugh);
@@ -230,22 +250,28 @@ class Concrete5_Controller_Upgrade extends Controller {
 	private function do_upgrade() {
 		$runMessages = array();
 		$prepareMessages = array();
+		$currentLocale = Localization::activeLocale();
+		if ($currentLocale != 'en_US') {
+			// Prevent the database records being stored in wrong language
+			Localization::changeLocale('en_US');
+		}
 		try {
 			Cache::flush();
 			$this->set_upgrades();
+
 			foreach($this->upgrades as $ugh) {
 				if (method_exists($ugh, 'prepare')) {
 					$prepareMessages[] =$ugh->prepare($this);
 				}
+
 				if (isset($ugh->dbRefreshTables) && count($ugh->dbRefreshTables) > 0) {
 					$this->refreshDatabaseTables($ugh->dbRefreshTables);
 				}
-			}
-			
-			foreach($this->upgrades as $ugh) {
+
 				if (method_exists($ugh, 'run')) {
 					$runMessages[] = $ugh->run();
 				}
+
 			}
 			
 			$message = '';
@@ -270,13 +296,26 @@ class Concrete5_Controller_Upgrade extends Controller {
 			
 			}			
 			$upgrade = true;
+			if ($currentLocale != 'en_US') {
+				Localization::changeLocale($currentLocale);
+			}
 		} catch(Exception $e) {
 			$upgrade = false;
+			if ($currentLocale != 'en_US') {
+				Localization::changeLocale($currentLocale);
+			}
 			$message .= '<div class="alert-message block-message error"><p>' . t('An Unexpected Error occurred while upgrading: %s', $e->getTraceAsString()) . '</p></div>';
 		}
 		
 		if ($upgrade) {
-			$completeMessage .= '<div class="alert-message block-message success"><p>' . t('Upgrade to <b>%s</b> complete!', APP_VERSION) . '</p></div>';
+			$completeMessage .= '<div class="alert-message block-message success"><p>';
+			if(defined('APP_VERSION_DISPLAY_IN_HEADER') && APP_VERSION_DISPLAY_IN_HEADER) {
+				$completeMessage .= t(/*i18n: %s is the concrete5 version number*/'Upgrade to %s complete!', sprintf('<b>%s</b>', APP_VERSION));
+			}
+			else {
+				$completeMessage .= t('Upgrade to latest version complete!');
+			}
+			$completeMessage .= '</p></div>';
 			Config::save('SITE_APP_VERSION', APP_VERSION);
 		}
 		$this->set('completeMessage',$completeMessage);	

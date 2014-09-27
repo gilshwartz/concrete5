@@ -14,11 +14,39 @@ defined('C5_EXECUTE') or die("Access Denied.");
 */
 class Concrete5_Library_Model extends ADOdb_Active_Record {
 
-
 	public function __construct() {
-	 	$db = Loader::db();
-	 	parent::__construct();
-	}		 
+		$db = Loader::db();
+		parent::__construct();
+	}
 
+    /**
+     * Override the default `doquote` method to better sanitize numeric values.
+     *
+     * @param ADOConnection $db
+     * @param mixed $value
+     * @param string $type
+     * @return mixed
+     */
+    public function doquote(&$db, $value, $type) {
+        switch ($type) {
+            case 'L':
+            case 'I':
+            case 'I1':
+            case 'I2':
+            case 'I4':
+            case 'I8':
+            case 'F':
+            case 'N':
+                if (!is_numeric($value)) {
+                    if (!$value) {
+                        return null;
+                    }
+                    $db->outp_throw('Numeric field type "' . $type . '" requires numeric value.', 'DOQUOTE');
+                    return 0;
+                }
+            default:
+                return parent::doquote($db, $value, $type);
+        }
+    }
 
 }
